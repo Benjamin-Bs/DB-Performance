@@ -40,7 +40,7 @@ mysql_conn.commit()
 start_time_mongodb = time.time()
 
 # 1.000 000 Datensätze generieren und in MongoDB speichern
-for _ in range(1000):
+for _ in range(1000000):
     # Daten generieren
     name = fake.name()
     address = fake.address()
