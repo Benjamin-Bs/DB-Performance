@@ -1,0 +1,3 @@
+CREATE DATABASE IF NOT EXISTS Performance;
+USE Performance;
+CREATE TABLE test;
