@@ -9,9 +9,9 @@ fake = Faker()
 mongo_client = MongoClient("mongodb://root:example@localhost:27018/")
 mongo_db = mongo_client["Performance"]
 mongo_collection = mongo_db["test"]
-mongo_collection.create_index([('email', 1)])
 
 # MySQL:
+# Verbindungsinformationen für MySQL
 mysql_config = {
     'user': 'root',
     'password': 'example',
@@ -21,48 +21,59 @@ mysql_config = {
 }
 mysql_conn = mysql.connector.connect(**mysql_config)
 mysql_cursor = mysql_conn.cursor()
+
+# MongoDB Indizes erstellen
+mongo_collection.create_index([("name", 1)])
+mongo_collection.create_index([("address", 1)])
+mongo_collection.create_index([("email", 1)])
+mongo_collection.create_index([("city", 1)])
+mongo_collection.create_index([("country", 1)])
+
+# MySQL Indizes erstellen
+mysql_cursor.execute("CREATE INDEX idx_name ON test (name)")
+mysql_cursor.execute("CREATE INDEX idx_address ON test (address)")
 mysql_cursor.execute("CREATE INDEX idx_email ON test (email)")
-
-# Anzahl der Datensätze
-num_records = 1000000
-
-# MongoDB: Batch-Insert-Größe
-mongo_batch_size = 1000
-
-# MySQL: Batch-Insert-Größe
-mysql_batch_size = 1000
-
-def generate_data():
-    data = []
-    for _ in range(num_records):
-        name = fake.name()
-        address = fake.address()
-        email = fake.email()
-        city = fake.city()
-        country = fake.country()
-        data.append((name, address, email, city, country))
-    return data
-
-def insert_into_mongodb(data):
-    mongo_collection.insert_many(data)
-
-def insert_into_mysql(data):
-    query = "INSERT INTO test (name, address, email, city, country) VALUES (%s, %s, %s, %s, %s)"
-    mysql_cursor.executemany(query, data)
-    mysql_conn.commit()
+mysql_cursor.execute("CREATE INDEX idx_city ON test (city)")
+mysql_cursor.execute("CREATE INDEX idx_country ON test (country)")
+mysql_conn.commit()
 
 start_time_mongodb = time.time()
-data = generate_data()
-for i in range(0, num_records, mongo_batch_size):
-    insert_into_mongodb(data[i:i+mongo_batch_size])
+
+# 1.000 000 Datensätze generieren und in MongoDB speichern
+for _ in range(1000):
+    # Daten generieren
+    name = fake.name()
+    address = fake.address()
+    email = fake.email()
+    city = fake.city()
+    country = fake.country()
+
+    # MongoDB: Datensatz einfügen
+    mongo_data = {"name": name, "address": address, "email": email, "city": city, "country": country}
+    mongo_collection.insert_one(mongo_data)
+
+# Zeitmessung beenden
 end_time_mongodb = time.time()
 mongo_time = end_time_mongodb - start_time_mongodb
 print("Time taken to insert into MongoDB:", mongo_time, "seconds")
 
 start_time_mysql = time.time()
-data = generate_data()
-for i in range(0, num_records, mysql_batch_size):
-    insert_into_mysql(data[i:i+mysql_batch_size])
+
+# 1.000 000 Datensätze generieren und in MySQL speichern
+for _ in range(1000000):
+    # Daten generieren
+    name = fake.name()
+    address = fake.address()
+    email = fake.email()
+    city = fake.city()
+    country = fake.country()
+
+    # MySQL: Datensatz einfügen
+    mysql_cursor.execute("INSERT INTO test (name, address, email, city, country) VALUES (%s, %s, %s, %s, %s)",
+                         (name, address, email, city, country))
+    mysql_conn.commit()
+
+# Zeitmessung beenden
 end_time_mysql = time.time()
 mysql_time = end_time_mysql - start_time_mysql
 print("Time taken to insert into MySQL:", mysql_time, "seconds")
